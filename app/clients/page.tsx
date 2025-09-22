@@ -17,6 +17,8 @@ interface Customer {
   name: string
   city: string
   username: string
+  phone: string
+  email?: string
   points: number
   createdAt: string
   updatedAt: string
@@ -39,6 +41,14 @@ function getPointsBadgeVariant(points: number) {
   if (points >= 2000) return "default" // High points
   if (points >= 1000) return "secondary" // Medium points
   return "outline" // Low points
+}
+
+function formatPhoneNumber(phone: string): string {
+  // Format phone number as XXX-XXX-XXXX if it's 10 digits
+  if (phone && phone.length === 10) {
+    return `${phone.slice(0, 3)}-${phone.slice(3, 6)}-${phone.slice(6)}`
+  }
+  return phone
 }
 
 export default function ClientsPage() {
@@ -142,7 +152,9 @@ export default function ClientsPage() {
   const filteredCustomers = customers.filter((customer) =>
     customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.city.toLowerCase().includes(searchTerm.toLowerCase())
+    customer.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    customer.phone.includes(searchTerm) ||
+    (customer.email && customer.email.toLowerCase().includes(searchTerm.toLowerCase()))
   )
 
   const handleEditPoints = (customer: Customer) => {
@@ -173,6 +185,9 @@ export default function ClientsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Clients</h1>
+            <p className="text-muted-foreground">
+              Manage customer information and loyalty points
+            </p>
           </div>
         </div>
 
@@ -180,7 +195,7 @@ export default function ClientsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle></CardTitle>
+              <CardTitle>Customer Directory</CardTitle>
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -201,7 +216,7 @@ export default function ClientsPage() {
               <div className="relative flex-1 max-w-sm">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 
-                  placeholder="Search customers..." 
+                  placeholder="Search by name, username, city, phone..." 
                   className="pl-10"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -220,58 +235,76 @@ export default function ClientsPage() {
             {/* Customers Table */}
             {!loading && (
               <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Username</TableHead>
-                      <TableHead>City</TableHead>
-                      <TableHead>Points</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredCustomers.length === 0 ? (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8">
-                          {searchTerm ? "No customers match your search." : "No customers found."}
-                        </TableCell>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Username</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>City</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Points</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
-                    ) : (
-                      filteredCustomers.map((customer) => (
-                        <TableRow key={customer._id}>
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center text-secondary-foreground text-sm font-medium">
-                                {customer.name
-                                  .split(" ")
-                                  .map((n) => n[0])
-                                  .join("")}
-                              </div>
-                              <div className="font-medium">{customer.name}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-muted-foreground">@{customer.username}</div>
-                          </TableCell>
-                          <TableCell>
-                            <div>{customer.city}</div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={getPointsBadgeVariant(customer.points)}>
-                              {customer.points.toLocaleString()} pts
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button variant="ghost" size="sm" onClick={() => handleEditPoints(customer)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredCustomers.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-8">
+                            {searchTerm ? "No customers match your search." : "No customers found."}
                           </TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                      ) : (
+                        filteredCustomers.map((customer) => (
+                          <TableRow key={customer._id}>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center text-secondary-foreground text-sm font-medium">
+                                  {customer.name
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")
+                                    .toUpperCase()}
+                                </div>
+                                <div>
+                                  <div className="font-medium">{customer.name}</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    Joined {new Date(customer.createdAt).toLocaleDateString()}
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-muted-foreground">@{customer.username}</div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="font-mono text-sm">{formatPhoneNumber(customer.phone)}</div>
+                            </TableCell>
+                            <TableCell>
+                              <div>{customer.city}</div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm text-muted-foreground">
+                                {customer.email || "Not provided"}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={getPointsBadgeVariant(customer.points)}>
+                                {customer.points.toLocaleString()} pts
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button variant="ghost" size="sm" onClick={() => handleEditPoints(customer)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
 
                 {/* Pagination */}
                 {!searchTerm && pagination.totalPages > 1 && (
@@ -288,6 +321,9 @@ export default function ClientsPage() {
                       >
                         Previous
                       </Button>
+                      <span className="flex items-center px-3 text-sm text-muted-foreground">
+                        Page {currentPage} of {pagination.totalPages}
+                      </span>
                       <Button
                         variant="outline"
                         size="sm"
