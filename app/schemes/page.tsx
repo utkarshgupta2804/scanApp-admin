@@ -5,8 +5,7 @@ import { AdminLayout } from "@/components/admin-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Edit, Plus, Eye, RefreshCw, Loader2 } from "lucide-react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Edit, Plus, Eye, RefreshCw, Loader2, Calendar } from "lucide-react"
 import { SchemeDialog } from "@/components/scheme-dialog"
 import { useToast } from "@/hooks/use-toast"
 
@@ -222,67 +221,65 @@ export default function SchemesPage() {
     }
   }
 
-  // Helper function to get full image URL - FIXED WITH DEBUG
+  // Helper function to get full image URL
   const getImageUrl = (imagePath: string) => {
     if (!imagePath) {
-      console.log("No image path provided, using placeholder")
       return "/placeholder.svg"
     }
     
     // If it's already a full URL, return as is
     if (imagePath.startsWith('http')) {
-      console.log(`Image path is full URL: ${imagePath}`)
       return imagePath
     }
     
     // Handle paths that start with /uploads or /public
     if (imagePath.startsWith('/uploads') || imagePath.startsWith('/public')) {
-      const fullUrl = `${API_BASE_URL}${imagePath}`
-      console.log(`Converting path ${imagePath} to full URL: ${fullUrl}`)
-      return fullUrl
+      return `${API_BASE_URL}${imagePath}`
     }
     
     // For relative paths, prepend API base URL with /
-    const fullUrl = `${API_BASE_URL}/${imagePath}`
-    console.log(`Converting relative path ${imagePath} to full URL: ${fullUrl}`)
-    return fullUrl
+    return `${API_BASE_URL}/${imagePath}`
   }
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6 p-4 md:p-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Schemes</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Schemes</h1>
+            <p className="text-sm md:text-base text-muted-foreground mt-1">
+              Manage reward schemes and point requirements
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <Button 
               variant="outline" 
               onClick={handleRefresh}
               disabled={loading || refreshing}
+              className="flex-1 sm:flex-none"
             >
               {refreshing ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <RefreshCw className="mr-2 h-4 w-4" />
               )}
-              Refresh
+              <span className="hidden sm:inline">Refresh</span>
             </Button>
-            <Button onClick={handleCreateScheme}>
+            <Button onClick={handleCreateScheme} className="flex-1 sm:flex-none">
               <Plus className="mr-2 h-4 w-4" />
-              Create Scheme
+              Create
             </Button>
           </div>
         </div>
 
-        {/* Schemes Table */}
+        {/* Schemes Content */}
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>All Schemes</CardTitle>
+          <CardHeader className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <CardTitle className="text-lg md:text-xl">All Schemes</CardTitle>
               {pagination.totalPages > 1 && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center sm:justify-end gap-2">
                   <Button
                     variant="outline"
                     size="sm"
@@ -291,7 +288,7 @@ export default function SchemesPage() {
                   >
                     Previous
                   </Button>
-                  <span className="text-sm text-muted-foreground px-2">
+                  <span className="text-xs sm:text-sm text-muted-foreground px-2 whitespace-nowrap">
                     Page {pagination.currentPage} of {pagination.totalPages}
                   </span>
                   <Button
@@ -308,94 +305,158 @@ export default function SchemesPage() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="flex items-center justify-center py-12">
+              <div className="flex flex-col items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin" />
-                <span className="ml-2">Loading schemes...</span>
+                <span className="ml-2 text-sm md:text-base mt-2">Loading schemes...</span>
               </div>
             ) : schemes.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-muted-foreground">No schemes found</p>
-                <Button onClick={handleCreateScheme} className="mt-4">
+                <p className="text-muted-foreground mb-4">No schemes found</p>
+                <Button onClick={handleCreateScheme}>
                   <Plus className="mr-2 h-4 w-4" />
                   Create Your First Scheme
                 </Button>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Image</TableHead>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Points Required</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <>
+                {/* Desktop Table View - Hidden on mobile */}
+                <div className="hidden lg:block overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-3 px-4 font-medium">Image</th>
+                        <th className="text-left py-3 px-4 font-medium">Title</th>
+                        <th className="text-left py-3 px-4 font-medium">Description</th>
+                        <th className="text-left py-3 px-4 font-medium">Points Required</th>
+                        <th className="text-left py-3 px-4 font-medium">Created</th>
+                        <th className="text-right py-3 px-4 font-medium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {schemes.map((scheme) => (
+                        <tr key={scheme._id} className="border-b">
+                          <td className="py-3 px-4">
+                            <img
+                              src={getImageUrl(scheme.image)}
+                              alt={scheme.title}
+                              className="h-12 w-12 rounded-lg object-cover border border-border"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement
+                                target.src = "/placeholder.svg"
+                              }}
+                            />
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="font-medium">{scheme.title}</div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="max-w-xs truncate text-muted-foreground text-sm">
+                              {scheme.description}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <Badge variant="secondary">{scheme.pointsRequired} pts</Badge>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="text-sm text-muted-foreground">
+                              {new Date(scheme.createdAt).toLocaleDateString()}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleEditScheme(scheme)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile/Tablet Card View */}
+                <div className="lg:hidden space-y-4">
                   {schemes.map((scheme) => (
-                    <TableRow key={scheme._id}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <img
-                            src={getImageUrl(scheme.image)}
-                            alt={scheme.title}
-                            className="h-12 w-12 rounded-lg object-cover border border-border"
-                            onLoad={() => {
-                              console.log(`Successfully loaded image: ${scheme.image}, full URL: ${getImageUrl(scheme.image)}`)
-                            }}
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement
-                              const originalSrc = target.src
-                              target.src = "/placeholder.svg"
-                              console.error(`Failed to load image: ${scheme.image}`)
-                              console.error(`Full URL attempted: ${originalSrc}`)
-                              console.error(`Falling back to placeholder`)
-                              
-                              // Test the URL directly
-                              fetch(originalSrc)
-                                .then(response => {
-                                  console.error(`Direct fetch response status: ${response.status}`)
-                                  console.error(`Response headers:`, response.headers)
-                                })
-                                .catch(err => {
-                                  console.error(`Direct fetch failed:`, err)
-                                })
-                            }}
-                          />
+                    <Card key={scheme._id} className="overflow-hidden">
+                      <CardContent className="p-4">
+                        <div className="flex gap-4">
+                          {/* Image */}
+                          <div className="flex-shrink-0">
+                            <img
+                              src={getImageUrl(scheme.image)}
+                              alt={scheme.title}
+                              className="h-20 w-20 sm:h-24 sm:w-24 rounded-lg object-cover border border-border"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement
+                                target.src = "/placeholder.svg"
+                              }}
+                            />
+                          </div>
+
+                          {/* Content */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <h3 className="font-semibold text-base sm:text-lg break-words flex-1">
+                                {scheme.title}
+                              </h3>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => handleEditScheme(scheme)}
+                                className="flex-shrink-0"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </div>
+
+                            <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                              {scheme.description}
+                            </p>
+
+                            <div className="flex flex-wrap items-center gap-3">
+                              <Badge variant="secondary" className="text-xs sm:text-sm">
+                                {scheme.pointsRequired} pts
+                              </Badge>
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Calendar className="h-3 w-3" />
+                                {new Date(scheme.createdAt).toLocaleDateString()}
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-medium">{scheme.title}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="max-w-xs truncate text-muted-foreground">
-                          {scheme.description}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{scheme.pointsRequired} pts</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm text-muted-foreground">
-                          {new Date(scheme.createdAt).toLocaleDateString()}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleEditScheme(scheme)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                      </CardContent>
+                    </Card>
                   ))}
-                </TableBody>
-              </Table>
+                </div>
+
+                {/* Mobile Pagination (if not shown in header) */}
+                {pagination.totalPages > 1 && (
+                  <div className="lg:hidden flex items-center justify-center gap-2 mt-6 pt-4 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={!pagination.hasPrevPage || loading}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-xs sm:text-sm text-muted-foreground px-2">
+                      {pagination.currentPage} / {pagination.totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={!pagination.hasNextPage || loading}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
